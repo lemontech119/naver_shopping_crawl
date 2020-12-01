@@ -33,32 +33,37 @@ def infinity_scroll():
 def crawl_from_shop(product_data_list):
     product_li = driver.find_elements_by_class_name("basicList_item__2XT81")
     for li in product_li:
-        product_data = OrderedDict()
-        product_all_data_div = li.find_element_by_class_name("basicList_inner__eY_mq")
-        product_image_div = product_all_data_div.find_element_by_class_name("basicList_img_area__a3NRA")
-        product_info_div = product_all_data_div.find_element_by_class_name("basicList_info_area__17Xyo")
-        product_store_div = product_all_data_div.find_element_by_class_name("basicList_mall_area__lIA7R")
+        try:
+            if li.find_element_by_class_name("ad_ad_stk__12U34"):
+                continue
+        except:
+            product_data = OrderedDict()
+            product_all_data_div = li.find_element_by_class_name("basicList_inner__eY_mq")
+            product_image_div = product_all_data_div.find_element_by_class_name("basicList_img_area__a3NRA")
+            product_info_div = product_all_data_div.find_element_by_class_name("basicList_info_area__17Xyo")
+            product_store_div = product_all_data_div.find_element_by_class_name("basicList_mall_area__lIA7R")
 
-        product_data["product_name"] = product_info_div.find_element_by_class_name("basicList_title__3P9Q7").find_element_by_tag_name("a").text.replace(",", "")
-        product_data["product_price"] = product_info_div.find_element_by_class_name("basicList_price_area__1UXXR").find_element_by_tag_name("span").text.replace(",", "")
-        product_data["product_review"] = product_info_div.find_element_by_class_name("basicList_etc_box__1Jzg6").find_element_by_tag_name("em").text.replace(",", "")
-        not_sale_count = len(product_info_div.find_elements_by_class_name("basicList_etc__2uAYO"))
-        if not_sale_count == 4:
-            product_data["product_registration"] = product_info_div.find_elements_by_class_name("basicList_etc__2uAYO")[1].text.replace(",", "").replace("등록일 ", "")
-        elif not_sale_count == 5:
-            product_data["product_registration"] = product_info_div.find_elements_by_class_name("basicList_etc__2uAYO")[2].text.replace(",", "").replace("등록일 ", "")
-        place_store = product_store_div.find_element_by_class_name("basicList_mall_title__3MWFY").find_element_by_tag_name("a")
-        if len(place_store.text) > 1:
-            product_data["place_store"] = place_store.text.replace(",", "")
-        else:
-            product_data["place_store"] = product_store_div.find_element_by_class_name("basicList_mall_title__3MWFY").find_element_by_tag_name("img").get_attribute("alt")
-        product_data["delivery_charge"] = product_store_div.find_element_by_class_name("basicList_mall_option__1qEUo").find_element_by_tag_name("em").text.replace(",", "").replace("배송비 ", "")
-        product_data["url"] = product_image_div.find_element_by_tag_name("a").get_attribute("href").replace(",", "")
-        product_data_list.append(product_data)
+            product_data["product_name"] = product_info_div.find_element_by_class_name("basicList_title__3P9Q7").find_element_by_tag_name("a").text.replace(",", "")
+            product_data["product_price"] = product_info_div.find_element_by_class_name("basicList_price_area__1UXXR").find_element_by_tag_name("span").text.replace(",", "")
+            product_data["product_review"] = product_info_div.find_element_by_class_name("basicList_etc_box__1Jzg6").find_element_by_tag_name("em").text.replace(",", "")
+            not_sale_count = len(product_info_div.find_elements_by_class_name("basicList_etc__2uAYO"))
+            if not_sale_count == 4:
+                product_data["product_registration"] = product_info_div.find_elements_by_class_name("basicList_etc__2uAYO")[1].text.replace(",", "").replace("등록일 ", "")
+            elif not_sale_count == 5:
+                product_data["product_registration"] = product_info_div.find_elements_by_class_name("basicList_etc__2uAYO")[2].text.replace(",", "").replace("등록일 ", "")
+            place_store = product_store_div.find_element_by_class_name("basicList_mall_title__3MWFY").find_element_by_tag_name("a")
+            if len(place_store.text) > 1:
+                product_data["place_store"] = place_store.text.replace(",", "")
+            else:
+                product_data["place_store"] = product_store_div.find_element_by_class_name("basicList_mall_title__3MWFY").find_element_by_tag_name("img").get_attribute("alt")
+            product_data["delivery_charge"] = product_store_div.find_element_by_class_name("basicList_mall_option__1qEUo").find_element_by_tag_name("em").text.replace(",", "").replace("배송비 ", "")
+            product_data["url"] = product_image_div.find_element_by_tag_name("a").get_attribute("href").replace(",", "")
+            product_data_list.append(product_data)
     return product_data_list
 
 
 def create_product_list_csv(product_data_list, category_name):
+    print("CSV 작성!!!!")
     f = open("product_naver_pay.csv", "a")
 
     for product in product_data_list:
@@ -72,11 +77,12 @@ def create_product_list_csv(product_data_list, category_name):
 
 
 def get_products_from_naver_order_by_review_count(base_url, category_id, category_name, last_paging):
-    loading_pause_time = 2
+    loading_pause_time = 3
     category_url = f"catId={category_id}&"
     product_data_list = []
 
     for paging_num in range(1, 5):
+        print(paging_num)
         paging_url = f"pagingIndex={paging_num}&"
         crawl_url = base_url + category_url + paging_url
 
@@ -95,10 +101,16 @@ def get_products_from_naver_order_by_review_count(base_url, category_id, categor
     create_product_list_csv(product_data_list, category_name)
 
 def main():
-    base_url = "https://search.shopping.naver.com/search/category?origQuery&pagingSize=100&productSet=total&query&sort=review&frm=NVSHCHK&"
+    base_url = "https://search.shopping.naver.com/search/category?origQuery&pagingSize=100&productSet=total&query&frm=NVSHCHK&"
     category_list = {
         "간편조리식": "50001894",
-        "기타냉동/간편조리식품": "50001878"
+        "기타냉동/간편조리식품": "50001878",
+        "축산가공식품": "50001174",
+        "수산가공식품": "50001094",
+        "면류": "50001084",
+        "빵류": "50001889",
+        "떡": "50001888",
+        "즉석국/즉석탕": "50001876"
     }
     last_paging = 10
     f = open("product_naver_pay.csv", "a")
